@@ -98,47 +98,47 @@ namespace HybridBT2
         /// <param name="context"></param>
         protected override void ExecuteUnderlyingBehaviour(Blackboard context)
         {
-            for (int i = 0; i < children.Count; i++)
+            children[currentChild].Evaluate(context);
+            switch (children[currentChild].State)
             {
-                if (prevChild != -1 && !children[i].AlwaysCheck && i != prevChild) continue;
-                children[i].Evaluate(context);
-                if (children[i].State == NodeState.FAILURE)
-                {
-                    if (i == children.Count - 1)
+                case NodeState.FAILURE:
+                    currentChild++;
+                    if (currentChild >= children.Count) SetState(NodeState.FAILURE, context);
+                    else SetState(NodeState.RUNNING, context);
+                    break;
+                case NodeState.RUNNING:
+                    if (prevChild != currentChild)
                     {
-                        SetState(NodeState.FAILURE, context);
-                        return;
+                        children[prevChild].Abort(context);
+                        prevChild = currentChild;
                     }
                     SetState(NodeState.RUNNING, context);
-                    continue;
-                }
-                if (prevChild != -1) children[prevChild].Abort(context);
-                prevChild = i;
-                SetState(children[i].State, context);
-                return;
+                    break;
+                case NodeState.SUCCESS:
+                    if (prevChild != currentChild) children[prevChild].Abort(context);
+                    SetState(NodeState.SUCCESS, context);
+                    break;
             }
-            throw new Exception($"{this} did not finish executing main loop!");
+        }
+        public class ParallelNode : RegularComposite
+        {
+            public ParallelNode(string name, Node leftChild, Node rightChild, Action<Node, Blackboard> onEnter = null,
+                Action<Node, Blackboard> onExit = null) : base(name, onEnter, onExit)
+            {
+                AddChild(leftChild);
+                AddChild(rightChild);
+            }
+            /// <summary>
+            /// Executes the first child. If not FAILURE, will evaluate the second, otherwise if 
+            /// the second is RUNNING it will Abort it.
+            /// </summary>
+            /// <param name="context"></param>
+            protected override void ExecuteUnderlyingBehaviour(Blackboard context)
+            {
+                children[0].Evaluate(context);
+                SetState(children[0].State, context);
+                if (State != NodeState.FAILURE) children[1].Evaluate(context);
+                else if (children[1].State == NodeState.RUNNING) children[1].Abort(context);
+            }
         }
     }
-    public class ParallelNode : RegularComposite
-    {
-        public ParallelNode(string name, Node leftChild, Node rightChild, Action<Node, Blackboard> onEnter = null,
-            Action<Node, Blackboard> onExit = null) : base(name, onEnter, onExit)
-        {
-            AddChild(leftChild);
-            AddChild(rightChild);
-        }
-        /// <summary>
-        /// Executes the first child. If not FAILURE, will evaluate the second, otherwise if 
-        /// the second is RUNNING it will Abort it.
-        /// </summary>
-        /// <param name="context"></param>
-        protected override void ExecuteUnderlyingBehaviour(Blackboard context)
-        {
-            children[0].Evaluate(context);
-            SetState(children[0].State, context);
-            if (State != NodeState.FAILURE) children[1].Evaluate(context);
-            else if (children[1].State == NodeState.RUNNING) children[1].Abort(context);
-        }
-    }
-}
