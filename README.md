@@ -23,3 +23,5 @@ This project contains various systems which can be used in other projects. So fa
 # Radar system prototype
 
 # BT/GOAP/Utility AI
+
+# A couple benchmark scripts
