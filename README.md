@@ -21,3 +21,5 @@ This project contains various systems which can be used in other projects. So fa
 # Global updater
 
 # Radar system prototype
+
+# BT/GOAP/Utility AI
