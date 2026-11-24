@@ -5,48 +5,56 @@ namespace Utilities
     public sealed class GlobalUpdater : Singleton<GlobalUpdater>
     {
         Action<float> update = delegate { }, lateUpdate = delegate { }, fixedUpdate = delegate { };
+
         protected override void ClearSingleton()
         {
             base.ClearSingleton();
-            update = null;
-            lateUpdate = null;
-            fixedUpdate = null;
+            update = fixedUpdate = lateUpdate = null;
         }
-        public void RegisterUpdate(Action<float> action)
+
+        public static void RegisterUpdate(Action<float> action)
         {
-            update += action;
+            TryGetInstance(true).update += action;
         }
-        public void UnregisterUpdate(Action<float> action)
+
+        public static void DeregisterUpdate(Action<float> action)
         {
-            update -= action;
+            if (HasInstance) instance.update -= action;
         }
-        public void RegisterLateUpdate(Action<float> action)
+
+        public static void RegisterLateUpdate(Action<float> action)
         {
-            lateUpdate += action;
+            TryGetInstance(true).lateUpdate += action;
         }
-        public void UnregisterLateUpdate(Action<float> action)
+
+        public static void DeregisterLateUpdate(Action<float> action)
         {
-            lateUpdate -= action;
+            if (HasInstance) instance.lateUpdate -= action;
         }
-        public void RegisterFixedUpdate(Action<float> action)
+
+        public static void RegisterFixedUpdate(Action<float> action)
         {
-            fixedUpdate += action;
+            TryGetInstance(true).fixedUpdate += action;
         }
-        public void UnregisterFixedUpdate(Action<float> action)
+
+        public static void DeregisterFixedUpdate(Action<float> action)
         {
-            fixedUpdate -= action;
+            if (HasInstance) instance.fixedUpdate -= action;
         }
+
         private void Update()
         {
-            update?.Invoke(Time.deltaTime);
+            update(Time.deltaTime);
         }
+
         private void LateUpdate()
         {
-            lateUpdate?.Invoke(Time.deltaTime);
+            lateUpdate(Time.deltaTime);
         }
+
         private void FixedUpdate()
         {
-            fixedUpdate?.Invoke(Time.fixedDeltaTime);
+            fixedUpdate(Time.fixedDeltaTime);
         }
     }
 }
